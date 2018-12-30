@@ -1,11 +1,11 @@
 package cx.cad.bowling
 
-import cx.cad.bowling.Games.Perfect
+import cx.cad.bowling.Games._
 import cx.cad.bowling.bowling.EndOfGame
 import org.scalatest._
 import org.scalacheck._
 import org.scalacheck.Prop._
-import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks}
+import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks, TableDrivenPropertyChecks}
 
 // Problem statement:
 //Write a program that takes as input an array of integers representing a
@@ -27,24 +27,85 @@ import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks}
 //  Test quality and expressiveness
 //  Documentation
 //
-class FrameSpec extends FlatSpec with Matchers  {
-  "Frame generation" should
-    "generate an open frame" in {
-      val rolls = Game.arrayToSeq(Array(1,2))
-      val frames = Game.rollsToFrames(rolls)
-      frames.head should be(Open(Roll(1), Roll(2)))
-    }
+class FrameSpec extends PropSpec with TableDrivenPropertyChecks with Matchers {
 
+  val examples = Table[(Seq[Roll], List[Frame])]("rolls and frames",
+    Seq(1,2).map(Roll) -> List(
+      Open(
+        Roll(1),
+        Roll(2))),
+    Seq(10).map(Roll) -> List(Strike(EndOfGame)),
+    // TODO: ew, this could get nasty
+    Seq(10,10).map(Roll) -> List(
+      Strike(Some(Strike(EndOfGame))),
+      Strike(EndOfGame)),
+    // FIXME: got nasty
+    Seq(1, 9, 5, 5, 0, 0).map(Roll) -> List(
+      Spare(
+        Roll(1),
+        Roll(9),
+        Some(Spare(
+          Roll(5),
+          Roll(5),
+          Some(Open(
+            Roll(0),
+            Roll(0)))))),
+      Spare(
+        Roll(5),
+        Roll(5),
+        Some(Open(
+          Roll(0),
+          Roll(0)))),
+      Open(
+        Roll(0),
+        Roll(0)))
+  )
+
+  val f =
+
+  property("Frame generation should generate correct frames") {
+    forAll(examples) { case(rollSeq, framesList) =>
+      val frames = Game.rollsToFrames(rollSeq)
+      frames should contain theSameElementsInOrderAs(framesList)
+    }
+  }
+}
+
+case class GameResult(score: Int, rolls: Array[Int])
+
+object Games {
+  val Perfect = GameResult(300, Array.fill(12)(10))
+  val TwoStrikes = GameResult(30, Array.fill(2)(10))
+  val ThreeStrikes = GameResult(60, Array.fill(3)(10))
+  val FourStrikes = GameResult(90, Array.fill(4)(10))
+  val FiveStrikes = GameResult(120, Array.fill(5)(10))
+  val Spares = GameResult(40, Array.fill(6)(5))
+  val Ones = GameResult(20, Array.fill(20)(1))
+}
+class GameSpec extends PropSpec with TableDrivenPropertyChecks with Matchers {
+  val examples = Table[GameResult]("game results",
+    Ones,
+    TwoStrikes,
+    ThreeStrikes,
+    FourStrikes,
+    FiveStrikes,
+    Perfect,
+    Spares,
+  )
+
+  property("Known games should be scored correctly") {
+    forAll(examples) { result =>
+      info(s"${result.rolls.toList} should have score ${result.score}")
+      val game = Game.from(result.rolls)
+      game.score should be(result.score)
+    }
+  }
 }
 
 
 class ScoringSpec extends FlatSpec with Matchers with GeneratorDrivenPropertyChecks {
   "A strike" should "have score of 10 without a next frame" in {
     Strike(EndOfGame).score should be(10)
-  }
-
-  "A perfect game" should "have score of 300" in {
-    Game.from(Perfect.rolls).score should be(Perfect.score)
   }
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
@@ -83,8 +144,3 @@ class ScoringSpec extends FlatSpec with Matchers with GeneratorDrivenPropertyChe
   }
 }
 
-case class GameResult(score: Int, rolls: Array[Int])
-
-object Games {
-  val Perfect = GameResult(300, Array.fill(12)(10))
-}

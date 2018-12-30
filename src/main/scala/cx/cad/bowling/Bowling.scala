@@ -9,7 +9,8 @@ case class Roll(count: Int) extends AnyVal
 
 import cx.cad.bowling.Game._
 case class Game(rolls: Seq[Roll]) {
-  def score: Int = rollsToFrames(rolls).foldLeft(0) { (cumulative, frame) => cumulative + frame.score}
+  val frames: List[Frame] = rollsToFrames(rolls)
+  val score: Int = frames.foldLeft(0) { (cumulative, frame) => cumulative + frame.score}
 }
 
 object Game {
@@ -46,7 +47,8 @@ case class Open(first: Roll, second: Roll) extends Frame {
 }
 case class Strike(nextFrame: Option[Frame]) extends LookaheadFrame {
   val first = Roll(10)
-  val score: Int = 10 + nextFrame.map(_.score).getOrElse(0)
+  //val score: Int = 10 + nextFrame.map(_.score).getOrElse(0)
+  val score: Int = 10 + nextFrame.map(_.first).map(_.count).getOrElse(0)
 }
 case class Spare(first: Roll, second: Roll, nextFrame: Option[Frame]) extends LookaheadFrame {
   val score = 10 + nextFrame.map(_.first).map(_.count).getOrElse(0)
