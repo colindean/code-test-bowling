@@ -7,26 +7,33 @@ package object bowling {
 
 case class Roll(count: Int) extends AnyVal
 
+import cx.cad.bowling.Game._
 case class Game(rolls: Seq[Roll]) {
-  def score: Int = frames.foldLeft(0) { (cumulative, frame) => cumulative + frame.score}
-  def frames: Seq[Frame] = {
-    rolls.sliding(2)
-    ???
-  }
+  def score: Int = rollsToFrames(rolls).foldLeft(0) { (cumulative, frame) => cumulative + frame.score}
 }
 
 object Game {
   def from(rolls: Array[Int]): Game = {
-    Game(rolls.view.map(Roll))
+    Game(arrayToSeq(rolls))
+  }
+
+  def arrayToSeq(array: Array[Int]): Seq[Roll] = array.map(Roll)
+
+  def rollsToFrames(remainingRolls: Seq[Roll]): List[Frame] = {
+    remainingRolls.toList match {
+      case Roll(10) :: cdr =>
+        val next = rollsToFrames(cdr)
+        Strike(next.headOption) :: next
+      case first :: second :: cdr if first.count + second.count == 10 =>
+        val next = rollsToFrames(cdr)
+        Spare(first, second, next.headOption) :: next
+      case first :: second :: cdr if first.count + second.count < 10 =>  Open(first, second) :: rollsToFrames(cdr)
+      case _ => Nil
+    }
   }
 }
 
 case class Score(points: Int) extends AnyVal
-/*trait Frame {
-  val first: Int
-  val second: Option[Int]
-  val third: Option[Int]
-}*/
 trait Frame {
   val score: Int
   val first: Roll

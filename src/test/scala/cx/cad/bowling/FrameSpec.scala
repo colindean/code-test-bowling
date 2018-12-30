@@ -1,5 +1,6 @@
 package cx.cad.bowling
 
+import cx.cad.bowling.Games.Perfect
 import cx.cad.bowling.bowling.EndOfGame
 import org.scalatest._
 import org.scalacheck._
@@ -26,7 +27,26 @@ import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks}
 //  Test quality and expressiveness
 //  Documentation
 //
-class BowlingSpec extends FlatSpec with Matchers with GeneratorDrivenPropertyChecks {
+class FrameSpec extends FlatSpec with Matchers  {
+  "Frame generation" should
+    "generate an open frame" in {
+      val rolls = Game.arrayToSeq(Array(1,2))
+      val frames = Game.rollsToFrames(rolls)
+      frames.head should be(Open(Roll(1), Roll(2)))
+    }
+
+}
+
+
+class ScoringSpec extends FlatSpec with Matchers with GeneratorDrivenPropertyChecks {
+  "A strike" should "have score of 10 without a next frame" in {
+    Strike(EndOfGame).score should be(10)
+  }
+
+  "A perfect game" should "have score of 300" in {
+    Game.from(Perfect.rolls).score should be(Perfect.score)
+  }
+
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfig(minSize = 10, maxSize = 20, minSuccessful = 5, maxDiscarded = 5000)
 
@@ -63,13 +83,8 @@ class BowlingSpec extends FlatSpec with Matchers with GeneratorDrivenPropertyChe
   }
 }
 
+case class GameResult(score: Int, rolls: Array[Int])
 
-class ScoringSpec extends FlatSpec with Matchers {
-  "A strike" should "have score of 10 without a next frame" in {
-    Strike(EndOfGame).score should be(10)
-  }
-
-  "A perfect game" should "have score of 300" in {
-    Game.from(Array.fill(12)(10)).score should be(300)
-  }
+object Games {
+  val Perfect = GameResult(300, Array.fill(12)(10))
 }
