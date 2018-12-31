@@ -2,6 +2,12 @@
 
 This was done for a code test part of an interview.
 
+## License
+
+CC0/Public domain.
+
+## Challenge
+
 > ### Problem statement:
 > Write a program that takes as input an array of integers representing a
   complete 10-pin bowling game, where each int represents the number of pins
@@ -23,6 +29,14 @@ This was done for a code test part of an interview.
 >  * Test quality and expressiveness
 >  * Documentation
 
-## License
+## Building
 
-CC0/Public domain.
+This project requires [`sbt`](https://www.scala-sbt.org/download.html).
+
+To run tests:
+
+> sbt test
+
+To run the simple CLI wrapper around the library:
+
+> sbt run
